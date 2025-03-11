@@ -32,52 +32,83 @@ class GameRoutes(gameRegistry: ActorRef[GameRegistry.Command])(implicit val syst
     gameRegistry.ask(DeleteGameByTitle(title, _))
   def updateGamePlatform(id: Int, platform: String): Future[ActionPerformed] =
     gameRegistry.ask(UpdateGamePlatform(id, platform, _))
+  def getGameByTitle(title: String): Future[GetGameResponse] =
+    gameRegistry.ask(GetGameByTitle(title, _))
+  def getGameByPrice(price: Double): Future[Games] =
+    gameRegistry.ask(GetGameByPrice(price, _))
+  def getGameByRating(rating: Double): Future[Games] =
+    gameRegistry.ask(GetGameByRating(rating, _))
+
 
   // ✅ สร้าง API Routes
-  val gameRoutes: Route =
-    pathPrefix("games") {
-      concat(
-        pathEnd {
-          concat(
-            get {
-              complete(getGames())
-            },
-            post {
-              entity(as[Game]) { game =>
-                onSuccess(createGame(game)) { performed =>
-                  complete((StatusCodes.Created, performed))
-                }
+ val gameRoutes: Route =
+  pathPrefix("games") {
+    concat(
+      pathEnd {
+        concat(
+          get {
+            complete(getGames())
+          },
+          post {
+            entity(as[Game]) { game =>
+              onSuccess(createGame(game)) { performed =>
+                complete((StatusCodes.Created, performed))
               }
-            })
-        },
-        path(IntNumber) { id =>
-          concat(
-            get {
-              rejectEmptyResponse {
-                onSuccess(getGame(id)) { response =>
-                  complete(response.maybeGame)
-                }
+            }
+          })
+      },
+      path(IntNumber) { id =>
+        concat(
+          get {
+            rejectEmptyResponse {
+              onSuccess(getGame(id)) { response =>
+                complete(response.maybeGame)
               }
-            },
-            delete {
-              onSuccess(deleteGame(id)) { performed =>
+            }
+          },
+          delete {
+            onSuccess(deleteGame(id)) { performed =>
+              complete((StatusCodes.OK, performed))
+            }
+          },
+          put {
+            parameter("platform") { platform =>
+              onSuccess(updateGamePlatform(id, platform)) { performed =>
                 complete((StatusCodes.OK, performed))
               }
-            },
-            put {
-              parameter("platform") { platform =>
-                onSuccess(updateGamePlatform(id, platform)) { performed =>
-                  complete((StatusCodes.OK, performed))
-                }
+            }
+          })
+      },
+      path("title" / Segment) { title =>
+        concat(
+          get {
+            rejectEmptyResponse {
+              onSuccess(getGameByTitle(title)) { response =>
+                complete(response.maybeGame)
               }
-            })
-        },
-        path("title" / Segment) { title =>
+            }
+          },
           delete {
             onSuccess(deleteGameByTitle(title)) { performed =>
               complete((StatusCodes.OK, performed))
             }
+          })
+      },
+      path("price" / DoubleNumber) { price =>
+        get {
+          onSuccess(getGameByPrice(price)) { games =>
+            complete(games)
           }
-        })
-    }
+        }
+      },
+      path("rating" / DoubleNumber) { rating =>
+        get {
+          onSuccess(getGameByRating(rating)) { games =>
+            complete(games)
+          }
+        }
+      }
+    )
+  }
+
 }
