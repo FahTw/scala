@@ -39,9 +39,8 @@ class GameRoutes(gameRegistry: ActorRef[GameRegistry.Command])(implicit val syst
   def getGameByRating(rating: Double): Future[Games] =
     gameRegistry.ask(GetGameByRating(rating, _))
 
-
   // ✅ สร้าง API Routes
- val gameRoutes: Route =
+  val gameRoutes: Route =
   pathPrefix("games") {
     concat(
       pathEnd {
@@ -110,5 +109,4 @@ class GameRoutes(gameRegistry: ActorRef[GameRegistry.Command])(implicit val syst
       }
     )
   }
-
 }
